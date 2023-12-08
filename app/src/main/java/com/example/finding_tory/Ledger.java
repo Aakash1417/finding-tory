@@ -31,7 +31,11 @@ public class Ledger {
     }
 
     public void setUser(User user) {
-        this.user = user;
+        if (this.user != null) {
+            throw new UnsupportedOperationException();
+        } else {
+            this.user = user;
+        }
     }
 
     public void setUserNames(String name, String usrname) {

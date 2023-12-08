@@ -19,6 +19,7 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
+import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 
@@ -132,20 +133,15 @@ public class TestAll {
         assertEquals(600f, inventory.get(0).getEstimatedValue());
     }
 
-    @Test
+    @Test(expected = IllegalArgumentException.class)
     public void testAddEmptyItem() {
         Inventory inventory = new Inventory("Test Inventory");
-        // Simulate adding an item with an unsupported data type in one of its fields
-        // Assuming 'comment' field is expected to be a String
-        Item item = new Item();
+        // Create an empty item with the empty constructor
+        Item emptyItem = new Item();
 
-        inventory.addItem(item);
-
-        Filter filter1 = new Filter();
-        inventory.setFilter(filter1);
-        inventory.filterItems();
-
-        assertTrue(inventory.getItems().contains(item));
+        // Attempt to add the empty item to the inventory
+        // This should throw an IllegalArgumentException since the item is empty
+        inventory.addItem(emptyItem);
     }
 
     @Test
@@ -210,6 +206,7 @@ public class TestAll {
     // created a test that uses functions outside the class definitions
     @Test
     public void testAddAndRemoveTagsInInventory() {
+        //todo
 //        Inventory inventory = new Inventory("Test Inventory");
 //        ArrayList<String> tagsToAdd = new ArrayList<>(Arrays.asList("Electronics", "Furniture"));
 //        inventory.addTagsToInventory(tagsToAdd);
@@ -687,4 +684,68 @@ public class TestAll {
         assertEquals(inventory.getItems().size(), inventory.getDisplayedItems().size());
     }
 
+    @Test
+    public void testAddItemWithNullFields() {
+        Inventory inventory = new Inventory("Test Inventory");
+        Item nullFieldItem = new Item(null, null, null, null, 0f, null, null, null, null);
+
+        inventory.addItem(nullFieldItem);
+
+        // Assuming the application does not handle null fields properly, this should cause an issue
+        assertEquals(1, inventory.getItems().size());
+    }
+
+    @Test
+    public void testAddExcessiveNumberOfItems() {
+        Inventory inventory = new Inventory("Test Inventory");
+        for (int i = 0; i < 10000; i++) {
+            Item item = new Item(new Date(), "Item" + i, "Brand", "Model", 100f, "SN" + i, "Description", new ArrayList<>(), new ArrayList<>());
+            inventory.addItem(item);
+        }
+
+        // This might break if the application cannot handle a large number of items efficiently
+        assertEquals(10000, inventory.getItems().size());
+    }
+
+
+    @Test
+    public void testSortWithInvalidDate() {
+        Inventory inventory = new Inventory("Test Inventory");
+        // Add an item with an invalid (future) date
+        Calendar futureDate = Calendar.getInstance();
+        futureDate.add(Calendar.YEAR, 10); // 10 years in the future
+        Item futureItem = new Item(futureDate.getTime(), "Future Item", "Brand", "Model", 100f, "SNFuture", "This is a future item", new ArrayList<>(), new ArrayList<>());
+
+        inventory.addItem(futureItem);
+        Sort sort = new Sort("Date", "Ascending");
+        inventory.setSort(sort);
+        inventory.sortItems();
+
+        // This might break if the application does not handle future dates properly
+        assertTrue(inventory.getDisplayedItems().size() > 0);
+    }
+
+    @Test
+    public void testSerializationWithLargeData() throws IOException, ClassNotFoundException {
+        Inventory inventory = new Inventory("Large Inventory");
+        for (int i = 0; i < 1000; i++) {
+            Item item = new Item(new Date(), "Item" + i, "Brand", "Model", 100f, "SN" + i, "Description", new ArrayList<>(), new ArrayList<>());
+            inventory.addItem(item);
+        }
+
+        // Serialize
+        ByteArrayOutputStream bos = new ByteArrayOutputStream();
+        ObjectOutputStream out = new ObjectOutputStream(bos);
+        out.writeObject(inventory);
+        out.flush();
+        byte[] inventoryData = bos.toByteArray();
+
+        // Deserialize
+        ByteArrayInputStream bis = new ByteArrayInputStream(inventoryData);
+        ObjectInputStream in = new ObjectInputStream(bis);
+        Inventory deserializedInventory = (Inventory) in.readObject();
+
+        // This might break if the application cannot handle serialization/deserialization of large data sets
+        assertEquals(1000, deserializedInventory.getItems().size());
+    }
 }

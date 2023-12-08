@@ -28,6 +28,7 @@ public class Item implements Serializable {
      * Firestore creates instances of data model classes when retrieving data from db
      */
     public Item() {
+        throw new IllegalArgumentException();
     }
 
     /**
@@ -42,7 +43,11 @@ public class Item implements Serializable {
      * @param comment        A comment about the item.
      * @param itemTags       A list of tags associated with the item.
      */
-    public Item(Date purchaseDate, String description, String make, String model, float estimatedValue, String serialNumber, String comment, ArrayList<String> itemTags, ArrayList<String> imageLinks) {
+    public Item(Date purchaseDate, String description, String make, String model, float estimatedValue, String serialNumber,
+                String comment, ArrayList<String> itemTags, ArrayList<String> imageLinks) {
+
+        errorHandleItemInput(purchaseDate.toString(), description, String.valueOf(estimatedValue));
+
         this.purchaseDate = purchaseDate;
         this.description = description;
         this.make = make;
@@ -298,13 +303,16 @@ public class Item implements Serializable {
      * @return a string with error message or empty string (no errors)
      * @throws ParseException
      */
-    public static String errorHandleItemInput(String purchaseDate, String description, String estimatedValue) throws ParseException {
+    public static String errorHandleItemInput(String purchaseDate, String description, String estimatedValue) {
         if (description.trim().equals("")) return "Item Description cannot be empty";
 
         Date current = new Date();
-        if (current.before(new SimpleDateFormat("yyyy-MM-dd").parse(purchaseDate)))
-            return "Date cannot be in the future";
-
+        try {
+            if (current.before(new SimpleDateFormat("yyyy-MM-dd").parse(purchaseDate)))
+                return "Date cannot be in the future";
+        } catch (Exception e) {
+            return "";
+        }
         if (estimatedValue.trim().equals("")) return "Estimated value cannot be empty";
         if (Float.parseFloat(estimatedValue) <= 0) return "Cannot have a negative Estimated value";
 
